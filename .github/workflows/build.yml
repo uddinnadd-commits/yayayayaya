@@ -1,0 +1,27 @@
+name: build
+on: [push, workflow_dispatch]
+
+jobs:
+  build:
+    runs-on: ubuntu-24.04
+    steps:
+      - name: checkout repository
+        uses: actions/checkout@v6
+      - name: setup jdk
+        uses: actions/setup-java@v5
+        with:
+          java-version: '25'
+          distribution: 'microsoft'
+      - name: unzip and build
+        run: |
+          for z in ./*.zip; do unzip -q -o "$z"; done
+          PROJECT=$(dirname "$(find . -name gradlew -not -path './.git/*' | head -n 1)")
+          echo "PROJECT=$PROJECT" >> "$GITHUB_ENV"
+          cd "$PROJECT"
+          chmod +x ./gradlew
+          ./gradlew build
+      - name: capture build artifacts
+        uses: actions/upload-artifact@v7
+        with:
+          name: thelostsouls-jar
+          path: ${{ env.PROJECT }}/build/libs/
